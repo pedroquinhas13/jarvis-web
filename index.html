@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #030a16; color: #00d8ff; font-family: 'Share Tech Mono', monospace; }
+        .glass { background: rgba(3, 15, 30, 0.8); border: 1px solid rgba(0, 216, 255, 0.3); backdrop-filter: blur(8px); }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 select-none">
+
+    <!-- Cabeçalho / Relógio -->
+    <header class="glass p-4 rounded-lg flex justify-between items-center mb-4">
+        <div>
+            <h1 class="orbitron font-black text-xl text-white tracking-widest">J.A.R.V.I.S.</h1>
+            <p class="text-xs text-cyan-400">STARK INDUSTRIES AI SYSTEM</p>
+        </div>
+        <div id="clock" class="orbitron text-xl text-white font-bold">00:00:00</div>
+    </header>
+
+    <!-- Painel de Conversa -->
+    <main class="glass p-4 rounded-lg flex-grow flex flex-col justify-between mb-4 relative overflow-hidden">
+        <div id="terminal" class="space-y-3 overflow-y-auto max-h-[60vh] p-2 text-sm">
+            <div class="p-3 border-l-2 border-cyan-400 bg-cyan-950/30 rounded">
+                <span class="text-xs opacity-50 block">[SISTEMA ONLINE]</span>
+                <p class="text-white">Olá, Senhor. Todos os sistemas estão operacionais. Como posso ajudar?</p>
+            </div>
+        </div>
+
+        <!-- Entrada de Texto e Microfone -->
+        <div class="flex gap-2 mt-4">
+            <input type="text" id="userInput" placeholder="Fale ou digite um comando..." class="flex-grow bg-black/60 border border-cyan-500/40 rounded px-3 py-2 text-white focus:outline-none">
+            <button id="micBtn" class="glass px-4 py-2 rounded hover:bg-cyan-500 hover:text-black transition-all">
+                <i class="fa-solid fa-microphone text-lg" id="micIcon"></i>
+            </button>
+            <button id="sendBtn" class="glass px-4 py-2 rounded hover:bg-cyan-500 hover:text-black transition-all">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </main>
+
+    <script>
+        // Atualiza o relógio no topo
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
+        }, 1000);
+
+        // Síntese de voz para o JARVIS falar
+        function falar(texto) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utt = new SpeechSynthesisUtterance(texto);
+                utt.lang = 'pt-BR';
+                window.speechSynthesis.speak(utt);
+            }
+        }
+
+        // Escreve mensagens na tela
+        function adicionarMensagem(autor, texto, ehUsuario = false) {
+            const terminal = document.getElementById('terminal');
+            const div = document.createElement('div');
+            div.className = ehUsuario 
+                ? "p-3 border-r-2 border-emerald-400 bg-emerald-950/20 text-right rounded" 
+                : "p-3 border-l-2 border-cyan-400 bg-cyan-950/30 rounded";
+            div.innerHTML = `<span class="text-xs opacity-50 block">${autor}</span><p class="text-white">${texto}</p>`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Respostas automáticas do JARVIS
+        function responder(comando) {
+            adicionarMensagem("VOCÊ", comando, true);
+            const cmd = comando.toLowerCase();
+            let resposta = "Comando recebido, Senhor. Estou processando sua solicitação.";
+
+            if (cmd.includes("horas") || cmd.includes("hora")) {
+                resposta = `Agora são exatamente ${new Date().toLocaleTimeString('pt-BR')}, Senhor.`;
+            } else if (cmd.includes("quem é você") || cmd.includes("nome")) {
+                resposta = "Eu sou o J.A.R.V.I.S., seu assistente pessoal de inteligência artificial.";
+            } else if (cmd.includes("status")) {
+                resposta = "Todos os sistemas operando dentro dos parâmetros ideais, Senhor.";
+            }
+
+            adicionarMensagem("J.A.R.V.I.S.", resposta);
+            falar(resposta);
+        }
+
+        // Envio por botão e tecla Enter
+        document.getElementById('sendBtn').onclick = () => {
+            const input = document.getElementById('userInput');
+            if (input.value.trim()) {
+                responder(input.value);
+                input.value = '';
+            }
+        };
+
+        document.getElementById('userInput').onkeypress = (e) => {
+            if (e.key === 'Enter') document.getElementById('sendBtn').click();
+        };
+
+        // Microfone por voz
+        const micBtn = document.getElementById('micBtn');
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new SR();
+            rec.lang = 'pt-BR';
+
+            rec.onstart = () => document.getElementById('micIcon').className = "fa-solid fa-microphone-lines text-red-500 animate-ping";
+            rec.onend = () => document.getElementById('micIcon').className = "fa-solid fa-microphone text-lg";
+            rec.onresult = (e) => {
+                const texto = e.results[0][0].transcript;
+                document.getElementById('userInput').value = texto;
+                responder(texto);
+            };
+
+            micBtn.onclick = () => rec.start();
+        }
+    </script>
+</body>
+</html>
