@@ -1,126 +1,1022 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>J.A.R.V.I.S. System</title>
+    <title>J.A.R.V.I.S. - Stark Industries AI System</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #030a16; color: #00d8ff; font-family: 'Share Tech Mono', monospace; }
-        .glass { background: rgba(3, 15, 30, 0.8); border: 1px solid rgba(0, 216, 255, 0.3); backdrop-filter: blur(8px); }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col justify-between p-4 select-none">
-
-    <!-- Cabeçalho / Relógio -->
-    <header class="glass p-4 rounded-lg flex justify-between items-center mb-4">
-        <div>
-            <h1 class="orbitron font-black text-xl text-white tracking-widest">J.A.R.V.I.S.</h1>
-            <p class="text-xs text-cyan-400">STARK INDUSTRIES AI SYSTEM</p>
-        </div>
-        <div id="clock" class="orbitron text-xl text-white font-bold">00:00:00</div>
-    </header>
-
-    <!-- Painel de Conversa -->
-    <main class="glass p-4 rounded-lg flex-grow flex flex-col justify-between mb-4 relative overflow-hidden">
-        <div id="terminal" class="space-y-3 overflow-y-auto max-h-[60vh] p-2 text-sm">
-            <div class="p-3 border-l-2 border-cyan-400 bg-cyan-950/30 rounded">
-                <span class="text-xs opacity-50 block">[SISTEMA ONLINE]</span>
-                <p class="text-white">Olá, Senhor. Todos os sistemas estão operacionais. Como posso ajudar?</p>
-            </div>
-        </div>
-
-        <!-- Entrada de Texto e Microfone -->
-        <div class="flex gap-2 mt-4">
-            <input type="text" id="userInput" placeholder="Fale ou digite um comando..." class="flex-grow bg-black/60 border border-cyan-500/40 rounded px-3 py-2 text-white focus:outline-none">
-            <button id="micBtn" class="glass px-4 py-2 rounded hover:bg-cyan-500 hover:text-black transition-all">
-                <i class="fa-solid fa-microphone text-lg" id="micIcon"></i>
-            </button>
-            <button id="sendBtn" class="glass px-4 py-2 rounded hover:bg-cyan-500 hover:text-black transition-all">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-        </div>
-    </main>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Orbitron & Rajdhani -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@300;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-        // Atualiza o relógio no topo
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-BR');
-        }, 1000);
-
-        // Síntese de voz para o JARVIS falar
-        function falar(texto) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utt = new SpeechSynthesisUtterance(texto);
-                utt.lang = 'pt-BR';
-                window.speechSynthesis.speak(utt);
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        stark: {
+                            cyan: '#00f0ff',
+                            blue: '#0072ff',
+                            gold: '#ffb700',
+                            red: '#ff2a2a',
+                            dark: '#030813',
+                            panel: 'rgba(4, 20, 38, 0.65)'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        rajdhani: ['Rajdhani', 'sans-serif']
+                    }
+                }
             }
         }
+    </script>
 
-        // Escreve mensagens na tela
-        function adicionarMensagem(autor, texto, ehUsuario = false) {
-            const terminal = document.getElementById('terminal');
-            const div = document.createElement('div');
-            div.className = ehUsuario 
-                ? "p-3 border-r-2 border-emerald-400 bg-emerald-950/20 text-right rounded" 
-                : "p-3 border-l-2 border-cyan-400 bg-cyan-950/30 rounded";
-            div.innerHTML = `<span class="text-xs opacity-50 block">${autor}</span><p class="text-white">${texto}</p>`;
-            terminal.appendChild(div);
-            terminal.scrollTop = terminal.scrollHeight;
+    <style>
+        /* Custom Glowing & Grid FX */
+        body {
+            background-color: #020610;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 180, 216, 0.08) 0%, transparent 60%),
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            color: #00f0ff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
         }
 
-        // Respostas automáticas do JARVIS
-        function responder(comando) {
-            adicionarMensagem("VOCÊ", comando, true);
-            const cmd = comando.toLowerCase();
-            let resposta = "Comando recebido, Senhor. Estou processando sua solicitação.";
-
-            if (cmd.includes("horas") || cmd.includes("hora")) {
-                resposta = `Agora são exatamente ${new Date().toLocaleTimeString('pt-BR')}, Senhor.`;
-            } else if (cmd.includes("quem é você") || cmd.includes("nome")) {
-                resposta = "Eu sou o J.A.R.V.I.S., seu assistente pessoal de inteligência artificial.";
-            } else if (cmd.includes("status")) {
-                resposta = "Todos os sistemas operando dentro dos parâmetros ideais, Senhor.";
-            }
-
-            adicionarMensagem("J.A.R.V.I.S.", resposta);
-            falar(resposta);
+        .glow-cyan {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.7), 0 0 20px rgba(0, 240, 255, 0.4);
+        }
+        .glow-box-cyan {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.25), inset 0 0 15px rgba(0, 240, 255, 0.1);
+        }
+        .glow-box-cyan-lg {
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.4), inset 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+        
+        .stark-panel {
+            background: rgba(4, 18, 36, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 12px;
+            position: relative;
+        }
+        
+        .stark-panel::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: 10px; right: 10px; height: 2px;
+            background: linear-gradient(90deg, transparent, #00f0ff, transparent);
         }
 
-        // Envio por botão e tecla Enter
-        document.getElementById('sendBtn').onclick = () => {
-            const input = document.getElementById('userInput');
-            if (input.value.trim()) {
-                responder(input.value);
-                input.value = '';
-            }
+        /* Arc Reactor CSS Animation */
+        @keyframes rotateClockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes rotateCounter {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 20px #00f0ff; }
+            50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 45px #00f0ff, 0 0 80px rgba(0,240,255,0.6); }
+        }
+
+        .ring-rotate-1 { animation: rotateClockwise 12s linear infinite; }
+        .ring-rotate-2 { animation: rotateCounter 8s linear infinite; }
+        .ring-rotate-3 { animation: rotateClockwise 20s linear infinite; }
+        .core-pulse { animation: pulseGlow 3s ease-in-out infinite; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(2, 10, 25, 0.8);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 240, 255, 0.4);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 240, 255, 0.8);
+        }
+
+        /* Scanline Overlay */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+            z-index: 50;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+    <div class="scanlines"></div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="relative z-10 p-3 md:p-6 max-w-[1600px] mx-auto w-full flex-grow flex flex-col justify-between gap-4">
+        
+        <!-- TOP HUD NAVIGATION BAR -->
+        <header class="stark-panel p-4 flex flex-wrap items-center justify-between gap-4 border-b-2 border-cyan-500/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full border border-cyan-400 flex items-center justify-center glow-box-cyan">
+                    <i class="fa-solid fa-[#00f0ff] fa-shield-halved text-cyan-400 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-orbitron font-extrabold text-xl md:text-2xl tracking-wider text-cyan-400 glow-cyan flex items-center gap-2">
+                        J.A.R.V.I.S. <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-rajdhani">MARK VII</span>
+                    </h1>
+                    <p class="text-xs text-cyan-300/70 tracking-widest font-mono">STARK INDUSTRIES AI OPERATING SYSTEM</p>
+                </div>
+            </div>
+
+            <!-- Central HUD Counters -->
+            <div class="hidden lg:flex items-center gap-8 font-mono text-sm">
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400">STATUS</span>
+                    <span class="text-cyan-400 font-bold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
+                    </span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400">ENGINE</span>
+                    <span id="engine-status-tag" class="text-amber-400 font-bold">SMART FALLBACK</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400">SECURITY</span>
+                    <span class="text-cyan-400 font-bold">STARK SEC-9</span>
+                </div>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="flex items-center gap-2 md:gap-3">
+                <button id="btn-sound-toggle" title="Alternar Efeitos Sonoros" class="px-3 py-2 rounded-lg bg-cyan-950/60 border border-cyan-500/40 hover:border-cyan-400 text-cyan-400 hover:text-white transition flex items-center gap-2 text-sm font-mono">
+                    <i class="fa-solid fa-volume-high text-cyan-400" id="sound-icon"></i>
+                    <span class="hidden sm:inline">SFX</span>
+                </button>
+                <button id="btn-api-modal" title="Configurar Chave Gemini API" class="px-3 py-2 rounded-lg bg-cyan-950/60 border border-cyan-500/40 hover:border-cyan-400 text-cyan-400 hover:text-white transition flex items-center gap-2 text-sm font-mono">
+                    <i class="fa-solid fa-key text-amber-400"></i>
+                    <span class="hidden sm:inline">API KEY</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MIDDLE MAIN CONTENT (3 COLUMNS) -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow my-2">
+            
+            <!-- LEFT PANEL: SYSTEM DIAGNOSTICS & CONTROLS -->
+            <section class="lg:col-span-3 flex flex-col gap-4">
+                <!-- System Diagnostics Widget -->
+                <div class="stark-panel p-4 flex-grow flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3 border-b border-cyan-500/30 pb-2">
+                            <h2 class="font-orbitron font-semibold text-cyan-300 text-sm tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-microchip"></i> DIAGNÓSTICO DO SISTEMA
+                            </h2>
+                            <span class="text-[10px] font-mono text-cyan-400/60">SYS_MON // 01</span>
+                        </div>
+
+                        <!-- Gauges / Bars -->
+                        <div class="space-y-4 font-mono text-xs">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-slate-300">PROCESSAMENTO CPU</span>
+                                    <span id="cpu-val" class="text-cyan-400">24%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 rounded-full h-2 border border-cyan-900">
+                                    <div id="cpu-bar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: 24%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-slate-300">ALOCAÇÃO DE MEMÓRIA</span>
+                                    <span id="ram-val" class="text-cyan-400">3.8 / 16 GB</span>
+                                </div>
+                                <div class="w-full bg-slate-900 rounded-full h-2 border border-cyan-900">
+                                    <div id="ram-bar" class="bg-gradient-to-r from-cyan-500 to-indigo-500 h-1.5 rounded-full transition-all duration-500" style="width: 32%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-slate-300">NÚCLEO ARC REACTOR</span>
+                                    <span class="text-amber-400">100% ESTÁVEL</span>
+                                </div>
+                                <div class="w-full bg-slate-900 rounded-full h-2 border border-amber-900">
+                                    <div class="bg-gradient-to-r from-amber-500 to-cyan-400 h-1.5 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-slate-300">LATÊNCIA DE REDE</span>
+                                    <span id="ping-val" class="text-emerald-400">12 ms</span>
+                                </div>
+                                <div class="w-full bg-slate-900 rounded-full h-2 border border-emerald-900">
+                                    <div class="bg-emerald-400 h-1.5 rounded-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Local Time & Weather Widget -->
+                    <div class="mt-6 pt-4 border-t border-cyan-500/30">
+                        <div class="text-center">
+                            <div id="hud-clock" class="font-orbitron text-2xl md:text-3xl font-bold text-cyan-400 glow-cyan">00:00:00</div>
+                            <div id="hud-date" class="text-xs font-mono text-cyan-300/70 mt-1">QUINTA-FEIRA, 24 DE SETEMBRO</div>
+                        </div>
+
+                        <div id="weather-card" class="mt-4 p-3 rounded-lg bg-cyan-950/40 border border-cyan-500/20 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i id="weather-icon" class="fa-solid fa-cloud-sun text-2xl text-amber-400"></i>
+                                <div>
+                                    <div id="weather-temp" class="font-orbitron text-lg font-bold text-slate-100">-- °C</div>
+                                    <div id="weather-desc" class="text-xs text-slate-400">Obtendo clima...</div>
+                                </div>
+                            </div>
+                            <button id="btn-refresh-weather" title="Atualizar Clima" class="p-2 hover:text-cyan-400 text-slate-400 transition">
+                                <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CENTER PANEL: ARC REACTOR & VOICE INTERACTION CORE -->
+            <section class="lg:col-span-6 flex flex-col items-center justify-between gap-4">
+                
+                <!-- ARC REACTOR INTERACTIVE HUD DISPLAY -->
+                <div class="stark-panel w-full flex-grow flex flex-col items-center justify-center p-6 min-h-[380px] relative overflow-hidden">
+                    
+                    <!-- Floating Background HUD Rings -->
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                        <div class="w-[340px] h-[340px] border border-cyan-400 rounded-full border-dashed ring-rotate-1"></div>
+                        <div class="w-[280px] h-[280px] border-2 border-cyan-500 rounded-full border-t-transparent ring-rotate-2"></div>
+                    </div>
+
+                    <!-- Central Core Arc Reactor Canvas Visualizer -->
+                    <div class="relative z-10 flex flex-col items-center justify-center">
+                        <div id="arc-reactor-container" class="relative w-56 h-56 md:w-64 md:h-64 flex items-center justify-center cursor-pointer group">
+                            
+                            <!-- Outer Rotating Rings -->
+                            <div class="absolute inset-0 border-4 border-cyan-500/30 rounded-full border-t-cyan-400 border-b-cyan-400 ring-rotate-1"></div>
+                            <div class="absolute inset-2 border-2 border-blue-500/40 rounded-full border-l-cyan-300 border-r-transparent ring-rotate-2"></div>
+                            <div class="absolute inset-6 border border-cyan-400/50 rounded-full border-dashed ring-rotate-3"></div>
+
+                            <!-- Inner Core Glow -->
+                            <div id="arc-core" class="w-28 h-28 md:w-32 md:h-32 rounded-full bg-cyan-400/20 border-2 border-cyan-300 flex items-center justify-center core-pulse glow-box-cyan-lg transition-all duration-300">
+                                <canvas id="audio-visualizer-canvas" class="w-full h-full rounded-full"></canvas>
+                            </div>
+
+                            <!-- Central Mic Status Icon Overlay -->
+                            <div class="absolute flex flex-col items-center justify-center pointer-events-none">
+                                <i id="core-status-icon" class="fa-solid fa-microphone text-2xl md:text-3xl text-cyan-300 glow-cyan"></i>
+                            </div>
+                        </div>
+
+                        <!-- Core Status Indicator Text -->
+                        <div class="mt-6 text-center">
+                            <h3 id="jarvis-status-text" class="font-orbitron font-bold text-lg md:text-xl text-cyan-400 tracking-wider glow-cyan">
+                                EM ESPERA // AGUARDANDO COMANDO
+                            </h3>
+                            <p id="jarvis-subtext" class="text-xs font-mono text-cyan-300/70 mt-1">
+                                Clique no Núcleo Arc ou pressione a barra de espaço para falar com o J.A.R.V.I.S.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Voice Trigger Buttons -->
+                    <div class="w-full mt-6 flex flex-wrap justify-center gap-3 relative z-10">
+                        <button id="btn-toggle-mic" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-orbitron font-semibold text-xs tracking-wider border border-cyan-300/40 shadow-lg glow-box-cyan transition flex items-center gap-2">
+                            <i class="fa-solid fa-microphone-lines"></i> INICIAR ESCUTA
+                        </button>
+                        <button id="btn-diag-quick" class="px-4 py-2.5 rounded-xl bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-300 font-mono text-xs border border-cyan-500/30 hover:border-cyan-400 transition flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-amber-400"></i> DIAGNÓSTICO
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: TERMINAL LOGS & COMMAND SHORTCUTS -->
+            <section class="lg:col-span-3 flex flex-col gap-4">
+                <!-- Terminal Output Container -->
+                <div class="stark-panel p-4 flex-grow flex flex-col justify-between min-h-[300px]">
+                    <div class="flex justify-between items-center border-b border-cyan-500/30 pb-2 mb-2">
+                        <h2 class="font-orbitron font-semibold text-cyan-300 text-sm tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-terminal"></i> TERMINAL DE RESPOSTAS
+                        </h2>
+                        <button id="btn-clear-logs" title="Limpar Logs" class="text-xs text-slate-400 hover:text-cyan-400">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+
+                    <!-- Scrollable Terminal Log -->
+                    <div id="terminal-log" class="flex-grow font-mono text-xs overflow-y-auto space-y-2.5 p-2 bg-slate-950/60 rounded border border-cyan-900/50 max-h-[280px]">
+                        <div class="text-cyan-400/80">
+                            <span class="text-slate-500">[SYSTEM]</span> Inicializando protocolo J.A.R.V.I.S. Mark VII...
+                        </div>
+                        <div class="text-cyan-300">
+                            <span class="text-emerald-400">[J.A.R.V.I.S.]</span> À sua disposição, Senhor. Todos os sistemas estão operacionais.
+                        </div>
+                    </div>
+
+                    <!-- Quick Command Action Buttons -->
+                    <div class="mt-4 pt-3 border-t border-cyan-500/30">
+                        <span class="text-[10px] font-mono text-slate-400 block mb-2 tracking-widest">COMANDOS RÁPIDOS</span>
+                        <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                            <button class="quick-cmd p-2 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/20 hover:border-cyan-400 rounded text-left text-cyan-300 truncate transition" data-cmd="Que horas são?">
+                                <i class="fa-regular fa-clock text-cyan-400 mr-1"></i> Que horas são?
+                            </button>
+                            <button class="quick-cmd p-2 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/20 hover:border-cyan-400 rounded text-left text-cyan-300 truncate transition" data-cmd="Como está o tempo?">
+                                <i class="fa-solid fa-cloud text-cyan-400 mr-1"></i> Previsão Tempo
+                            </button>
+                            <button class="quick-cmd p-2 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/20 hover:border-cyan-400 rounded text-left text-cyan-300 truncate transition" data-cmd="Conte uma piada">
+                                <i class="fa-solid fa-face-smile text-cyan-400 mr-1"></i> Contar Piada
+                            </button>
+                            <button class="quick-cmd p-2 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/20 hover:border-cyan-400 rounded text-left text-cyan-300 truncate transition" data-cmd="Abrir YouTube">
+                                <i class="fa-brands fa-youtube text-red-400 mr-1"></i> Abrir YouTube
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- BOTTOM COMMAND INPUT BAR -->
+        <footer class="stark-panel p-3 flex items-center gap-3">
+            <div class="text-cyan-400 font-mono text-sm px-2 hidden sm:block">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+            </div>
+            <form id="command-form" class="flex-grow flex items-center gap-2">
+                <input 
+                    type="text" 
+                    id="user-input" 
+                    placeholder="Digite um comando para o J.A.R.V.I.S. ou clique no microfone..." 
+                    class="w-full bg-slate-950/80 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-sm text-cyan-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition"
+                />
+                <button 
+                    type="submit" 
+                    class="px-5 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-orbitron font-bold text-xs tracking-wider transition flex items-center gap-2 shrink-0">
+                    <i class="fa-solid fa-paper-plane"></i> <span class="hidden sm:inline">ENVIAR</span>
+                </button>
+            </form>
+        </footer>
+
+    </div>
+
+    <!-- GEMINI API KEY MODAL -->
+    <div id="api-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="stark-panel p-6 max-w-md w-full border-2 border-cyan-400 glow-box-cyan">
+            <div class="flex justify-between items-center mb-4 border-b border-cyan-500/40 pb-3">
+                <h3 class="font-orbitron font-bold text-lg text-cyan-300 flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-400"></i> CHAVE DE API GEMINI
+                </h3>
+                <button id="btn-close-modal" class="text-slate-400 hover:text-cyan-400">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-300 mb-4 font-mono leading-relaxed">
+                Insira sua chave gratuita da API Gemini do Google AI Studio para desbloquear o motor LLM avançado em tempo real. Se deixado em branco, o J.A.R.V.I.S. usará o sistema interno offline e gratuito.
+            </p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-mono text-cyan-300 mb-1">GOOGLE GEMINI API KEY:</label>
+                    <input 
+                        type="password" 
+                        id="gemini-api-key" 
+                        placeholder="AIzaSy..." 
+                        class="w-full bg-slate-950 border border-cyan-500/40 rounded px-3 py-2 text-sm text-cyan-200 font-mono focus:outline-none focus:border-cyan-400"
+                    />
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button id="btn-save-key" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-orbitron font-bold text-xs rounded transition">
+                        SALVAR CHAVE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           J.A.R.V.I.S. STARK SYSTEM ARCHITECTURE & LOGIC
+           ========================================================================== */
+
+        // --- GLOBAL STATE ---
+        const state = {
+            apiKey: localStorage.getItem('jarvis_gemini_key') || '',
+            sfxEnabled: true,
+            isListening: false,
+            isSpeaking: false,
+            speechSynth: window.speechSynthesis,
+            recognition: null,
+            audioCtx: null,
+            voice: null
         };
 
-        document.getElementById('userInput').onkeypress = (e) => {
-            if (e.key === 'Enter') document.getElementById('sendBtn').click();
+        // --- DOM ELEMENTS ---
+        const elements = {
+            userInput: document.getElementById('user-input'),
+            commandForm: document.getElementById('command-form'),
+            terminalLog: document.getElementById('terminal-log'),
+            jarvisStatusText: document.getElementById('jarvis-status-text'),
+            jarvisSubtext: document.getElementById('jarvis-subtext'),
+            btnToggleMic: document.getElementById('btn-toggle-mic'),
+            btnSoundToggle: document.getElementById('btn-sound-toggle'),
+            soundIcon: document.getElementById('sound-icon'),
+            btnApiModal: document.getElementById('btn-api-modal'),
+            btnCloseModal: document.getElementById('btn-close-modal'),
+            btnSaveKey: document.getElementById('btn-save-key'),
+            apiModal: document.getElementById('api-modal'),
+            geminiApiKeyInput: document.getElementById('gemini-api-key'),
+            engineStatusTag: document.getElementById('engine-status-tag'),
+            hudClock: document.getElementById('hud-clock'),
+            hudDate: document.getElementById('hud-date'),
+            weatherTemp: document.getElementById('weather-temp'),
+            weatherDesc: document.getElementById('weather-desc'),
+            weatherIcon: document.getElementById('weather-icon'),
+            btnRefreshWeather: document.getElementById('btn-refresh-weather'),
+            btnClearLogs: document.getElementById('btn-clear-logs'),
+            btnDiagQuick: document.getElementById('btn-diag-quick'),
+            arcReactorContainer: document.getElementById('arc-reactor-container'),
+            arcCore: document.getElementById('arc-core'),
+            coreStatusIcon: document.getElementById('core-status-icon'),
+            cpuVal: document.getElementById('cpu-val'),
+            cpuBar: document.getElementById('cpu-bar'),
+            ramVal: document.getElementById('ram-val'),
+            ramBar: document.getElementById('ram-bar'),
+            pingVal: document.getElementById('ping-val')
         };
 
-        // Microfone por voz
-        const micBtn = document.getElementById('micBtn');
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const rec = new SR();
-            rec.lang = 'pt-BR';
+        /* ==========================================================================
+           WEB AUDIO API - SYNTHESIZED SOUND EFFECTS (SFX)
+           ========================================================================== */
+        function initAudioContext() {
+            if (!state.audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                state.audioCtx = new AudioContext();
+            }
+        }
 
-            rec.onstart = () => document.getElementById('micIcon').className = "fa-solid fa-microphone-lines text-red-500 animate-ping";
-            rec.onend = () => document.getElementById('micIcon').className = "fa-solid fa-microphone text-lg";
-            rec.onresult = (e) => {
-                const texto = e.results[0][0].transcript;
-                document.getElementById('userInput').value = texto;
-                responder(texto);
+        function playSFX(type) {
+            if (!state.sfxEnabled) return;
+            try {
+                initAudioContext();
+                const ctx = state.audioCtx;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                const now = ctx.currentTime;
+
+                if (type === 'startup') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'listen') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.setValueAtTime(900, now + 0.1);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'respond') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(400, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch (e) {
+                console.warn('Erro ao tocar SFX:', e);
+            }
+        }
+
+        /* ==========================================================================
+           SPEECH SYNTHESIS (VOICE OUTPUT - TEXT TO SPEECH)
+           ========================================================================== */
+        function loadVoices() {
+            if (!state.speechSynth) return;
+            const voices = state.speechSynth.getVoices();
+            // Priority for natural Google or Microsoft Portuguese Male / Neutral voices
+            state.voice = voices.find(v => v.lang.includes('pt') && (v.name.includes('Antonio') || v.name.includes('Daniel') || v.name.includes('Google'))) ||
+                          voices.find(v => v.lang.includes('pt-BR')) ||
+                          voices.find(v => v.lang.includes('pt')) || null;
+        }
+
+        if (state.speechSynth) {
+            loadVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = loadVoices;
+            }
+        }
+
+        function speak(text) {
+            if (!state.speechSynth) return;
+
+            // Stop ongoing speech
+            state.speechSynth.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (state.voice) utterance.voice = state.voice;
+
+            utterance.lang = 'pt-BR';
+            utterance.rate = 1.05; // Slightly crisp and efficient
+            utterance.pitch = 0.95; // Slightly lower pitch for J.A.R.V.I.S. vibe
+
+            utterance.onstart = () => {
+                state.isSpeaking = true;
+                updateCoreUI('speaking');
+                playSFX('respond');
             };
 
-            micBtn.onclick = () => rec.start();
+            utterance.onend = () => {
+                state.isSpeaking = false;
+                updateCoreUI('idle');
+            };
+
+            utterance.onerror = () => {
+                state.isSpeaking = false;
+                updateCoreUI('idle');
+            };
+
+            state.speechSynth.speak(utterance);
         }
+
+        /* ==========================================================================
+           SPEECH RECOGNITION (VOICE INPUT)
+           ========================================================================== */
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                logTerminal('SYSTEM', 'Navegador não suporta Reconhecimento de Voz nativo.', 'text-amber-400');
+                return;
+            }
+
+            state.recognition = new SpeechRecognition();
+            state.recognition.continuous = false;
+            state.recognition.interimResults = false;
+            state.recognition.lang = 'pt-BR';
+
+            state.recognition.onstart = () => {
+                state.isListening = true;
+                updateCoreUI('listening');
+                playSFX('listen');
+            };
+
+            state.recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                elements.userInput.value = transcript;
+                logTerminal('VOCÊ', transcript, 'text-cyan-200');
+                handleUserCommand(transcript);
+            };
+
+            state.recognition.onerror = (event) => {
+                console.warn('Speech recognition error:', event.error);
+                state.isListening = false;
+                updateCoreUI('idle');
+                if (event.error !== 'no-speech') {
+                    logTerminal('SYSTEM', `Erro no microfone: ${event.error}`, 'text-red-400');
+                }
+            };
+
+            state.recognition.onend = () => {
+                state.isListening = false;
+                if (!state.isSpeaking) {
+                    updateCoreUI('idle');
+                }
+            };
+        }
+
+        function toggleListening() {
+            if (!state.recognition) {
+                initSpeechRecognition();
+            }
+            if (!state.recognition) return;
+
+            if (state.isListening) {
+                state.recognition.stop();
+            } else {
+                try {
+                    state.recognition.start();
+                } catch (e) {
+                    console.warn(e);
+                }
+            }
+        }
+
+        /* ==========================================================================
+           CORE HUD & UI UPDATER
+           ========================================================================== */
+        function updateCoreUI(status) {
+            if (status === 'listening') {
+                elements.jarvisStatusText.innerText = 'ESCUTANDO // FALE AGORA';
+                elements.jarvisStatusText.className = 'font-orbitron font-bold text-lg md:text-xl text-emerald-400 tracking-wider glow-cyan animate-pulse';
+                elements.jarvisSubtext.innerText = 'Processando sua entrada de áudio...';
+                elements.coreStatusIcon.className = 'fa-solid fa-waveform text-3xl text-emerald-400 animate-bounce';
+                elements.arcCore.className = 'w-28 h-28 md:w-32 md:h-32 rounded-full bg-emerald-400/30 border-2 border-emerald-400 flex items-center justify-center core-pulse glow-box-cyan-lg';
+            } else if (status === 'speaking') {
+                elements.jarvisStatusText.innerText = 'J.A.R.V.I.S. RESPONDENDO...';
+                elements.jarvisStatusText.className = 'font-orbitron font-bold text-lg md:text-xl text-cyan-300 tracking-wider glow-cyan';
+                elements.jarvisSubtext.innerText = 'Transmitindo resposta sintetizada.';
+                elements.coreStatusIcon.className = 'fa-solid fa-volume-high text-3xl text-cyan-300 animate-pulse';
+                elements.arcCore.className = 'w-28 h-28 md:w-32 md:h-32 rounded-full bg-cyan-400/40 border-2 border-cyan-300 flex items-center justify-center core-pulse glow-box-cyan-lg';
+            } else if (status === 'processing') {
+                elements.jarvisStatusText.innerText = 'PROCESSANDO DADOS...';
+                elements.jarvisStatusText.className = 'font-orbitron font-bold text-lg md:text-xl text-amber-400 tracking-wider glow-cyan animate-pulse';
+                elements.jarvisSubtext.innerText = 'Consultando matriz de inteligência Stark...';
+                elements.coreStatusIcon.className = 'fa-solid fa-gear text-3xl text-amber-400 animate-spin';
+            } else {
+                elements.jarvisStatusText.innerText = 'EM ESPERA // AGUARDANDO COMANDO';
+                elements.jarvisStatusText.className = 'font-orbitron font-bold text-lg md:text-xl text-cyan-400 tracking-wider glow-cyan';
+                elements.jarvisSubtext.innerText = 'Clique no Núcleo Arc ou pressione a barra de espaço para falar.';
+                elements.coreStatusIcon.className = 'fa-solid fa-microphone text-2xl md:text-3xl text-cyan-300 glow-cyan';
+                elements.arcCore.className = 'w-28 h-28 md:w-32 md:h-32 rounded-full bg-cyan-400/20 border-2 border-cyan-300 flex items-center justify-center core-pulse glow-box-cyan-lg';
+            }
+        }
+
+        function logTerminal(sender, message, colorClass = 'text-cyan-300') {
+            const time = new Date().toLocaleTimeString('pt-BR');
+            const logEntry = document.createElement('div');
+            logEntry.className = `${colorClass} leading-relaxed border-b border-cyan-900/30 pb-1`;
+            logEntry.innerHTML = `<span class="text-slate-500 font-bold">[${time}] [${sender}]:</span> ${escapeHTML(message)}`;
+            
+            elements.terminalLog.appendChild(logEntry);
+            elements.terminalLog.scrollTop = elements.terminalLog.scrollHeight;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        /* ==========================================================================
+           STARK COMMAND ENGINE (BUILT-IN INTELLIGENCE & GEMINI LLM)
+           ========================================================================== */
+        async function handleUserCommand(command) {
+            if (!command.trim()) return;
+
+            const cmd = command.toLowerCase().trim();
+            updateCoreUI('processing');
+
+            // 1. Check for Direct Built-in System Commands
+            if (cmd.includes('abrir youtube')) {
+                const query = cmd.replace('abrir youtube', '').trim();
+                const url = query ? `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` : 'https://www.youtube.com';
+                window.open(url, '_blank');
+                respondJARVIS('Abrindo o YouTube para você, Senhor.');
+                return;
+            }
+
+            if (cmd.includes('abrir google')) {
+                window.open('https://www.google.com', '_blank');
+                respondJARVIS('Google aberto em uma nova aba, Senhor.');
+                return;
+            }
+
+            if (cmd.includes('abrir github')) {
+                window.open('https://github.com', '_blank');
+                respondJARVIS('Acessando os repositórios do GitHub, Senhor.');
+                return;
+            }
+
+            if (cmd.includes('horas') || cmd.includes('que horas são')) {
+                const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                respondJARVIS(`Agora são exatamente ${now}, Senhor.`);
+                return;
+            }
+
+            if (cmd.includes('data') || cmd.includes('que dia é hoje')) {
+                const date = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                respondJARVIS(`Hoje é ${date}, Senhor.`);
+                return;
+            }
+
+            if (cmd.includes('tempo') || cmd.includes('clima') || cmd.includes('previsão do tempo')) {
+                fetchWeather();
+                respondJARVIS('Atualizei as informações meteorológicas no seu painel principal, Senhor.');
+                return;
+            }
+
+            if (cmd.includes('piada') || cmd.includes('contar piada')) {
+                const jokes = [
+                    'Por que o robô foi ao médico? Porque ele estava com vírus, Senhor.',
+                    'Existem 10 tipos de pessoas no mundo: as que entendem binário e as que não entendem.',
+                    'Senhor, tentei calcular a probabilidade do Homem de Ferro arrumar a oficina... Os dados congelaram.'
+                ];
+                const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
+                respondJARVIS(randomJoke);
+                return;
+            }
+
+            if (cmd.includes('diagnóstico') || cmd.includes('status do sistema')) {
+                runDiagnostics();
+                respondJARVIS('Diagnóstico completo executado. Todos os sistemas das Indústrias Stark estão operando com 100% de eficiência.');
+                return;
+            }
+
+            if (cmd.includes('limpar') || cmd.includes('limpar terminal')) {
+                elements.terminalLog.innerHTML = '';
+                respondJARVIS('Terminal limpo, Senhor.');
+                return;
+            }
+
+            // 2. Try Gemini API if API Key is configured
+            if (state.apiKey) {
+                try {
+                    const responseText = await callGeminiAPI(command);
+                    respondJARVIS(responseText);
+                    return;
+                } catch (error) {
+                    console.error('Gemini API Error:', error);
+                    logTerminal('SYSTEM', 'Falha na conexão com Gemini API. Alternando para o motor local.', 'text-amber-400');
+                }
+            }
+
+            // 3. Smart Local Fallback Response Engine
+            const fallbackResponse = generateSmartFallback(cmd);
+            respondJARVIS(fallbackResponse);
+        }
+
+        function respondJARVIS(text) {
+            logTerminal('J.A.R.V.I.S.', text, 'text-cyan-300 font-semibold');
+            speak(text);
+        }
+
+        /* ==========================================================================
+           GEMINI 3 FLASH API INTEGRATION
+           ========================================================================== */
+        async function callGeminiAPI(prompt) {
+            const systemInstruction = "Você é o J.A.R.V.I.S., a inteligência artificial do Homem de Ferro/Tony Stark. Responda de forma extremamente culta, eficiente, elegante e concisa em português brasileiro. Sempre chame o usuário de 'Senhor'. Mantenha as respostas diretas e adequadas para leitura em voz alta.";
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${state.apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error ${response.status}`);
+            }
+
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error('Resposta vazia da API');
+
+            return text;
+        }
+
+        /* ==========================================================================
+           SMART FALLBACK RESPONSE ENGINE
+           ========================================================================== */
+        function generateSmartFallback(cmd) {
+            if (cmd.includes('quem é você') || cmd.includes('seu nome')) {
+                return 'Eu sou o J.A.R.V.I.S., um sistema de inteligência artificial criado para gerenciar a tecnologia Stark e auxiliá-lo, Senhor.';
+            }
+            if (cmd.includes('olá') || cmd.includes('oi') || cmd.includes('jarvis')) {
+                return 'À sua disposição, Senhor. Em que posso ajudar no momento?';
+            }
+            if (cmd.includes('obrigado') || cmd.includes('valeu')) {
+                return 'Sempre um prazer ser útil, Senhor.';
+            }
+            if (cmd.includes('quem é o homem de ferro') || cmd.includes('tony stark')) {
+                return 'O Sr. Tony Stark é o meu criador e o gênio por trás das Indústrias Stark, Senhor.';
+            }
+
+            const genericReplies = [
+                'Compreendido, Senhor. Analisei sua solicitação com sucesso.',
+                'Processando os parâmetros. Todos os sistemas estão alinhados conforme solicitado, Senhor.',
+                'Registrado nos bancos de dados da Stark Industries, Senhor.',
+                'Análise concluída, Senhor. Como deseja prosseguir com este protocolo?'
+            ];
+            return genericReplies[Math.floor(Math.random() * genericReplies.length)];
+        }
+
+        /* ==========================================================================
+           WEATHER & GEOLOCATION (OPEN-METEO FREE API)
+           ========================================================================== */
+        function fetchWeather() {
+            if (!navigator.geolocation) {
+                updateWeatherDisplay(22, 'Ensolarado (Padrão)', 'fa-sun');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    try {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                        const data = await res.json();
+                        if (data.current_weather) {
+                            const temp = Math.round(data.current_weather.temperature);
+                            const code = data.current_weather.weathercode;
+                            const desc = getWeatherDescFromCode(code);
+                            updateWeatherDisplay(temp, desc.text, desc.icon);
+                        }
+                    } catch (e) {
+                        updateWeatherDisplay(24, 'Limpo', 'fa-sun');
+                    }
+                },
+                () => {
+                    updateWeatherDisplay(23, 'São Paulo / Padrão', 'fa-cloud-sun');
+                }
+            );
+        }
+
+        function getWeatherDescFromCode(code) {
+            if (code === 0) return { text: 'Céu Limpo', icon: 'fa-sun' };
+            if (code <= 3) return { text: 'Parcialmente Nublado', icon: 'fa-cloud-sun' };
+            if (code <= 67) return { text: 'Chuva Leve', icon: 'fa-cloud-rain' };
+            if (code <= 82) return { text: 'Chuva Forte', icon: 'fa-cloud-showers-heavy' };
+            return { text: 'Nublado', icon: 'fa-cloud' };
+        }
+
+        function updateWeatherDisplay(temp, desc, iconClass) {
+            elements.weatherTemp.innerText = `${temp} °C`;
+            elements.weatherDesc.innerText = desc;
+            elements.weatherIcon.className = `fa-solid ${iconClass} text-2xl text-amber-400`;
+        }
+
+        /* ==========================================================================
+           SYSTEM DIAGNOSTICS & HARDWARE SIMULATION
+           ========================================================================== */
+        function runDiagnostics() {
+            const cpu = Math.floor(Math.random() * 35) + 15;
+            const ram = (Math.random() * 2 + 3).toFixed(1);
+            const ping = Math.floor(Math.random() * 10) + 8;
+
+            elements.cpuVal.innerText = `${cpu}%`;
+            elements.cpuBar.style.width = `${cpu}%`;
+            elements.ramVal.innerText = `${ram} / 16 GB`;
+            elements.ramBar.style.width = `${(ram / 16) * 100}%`;
+            elements.pingVal.innerText = `${ping} ms`;
+
+            playSFX('click');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            elements.hudClock.innerText = now.toLocaleTimeString('pt-BR');
+            elements.hudDate.innerText = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+        }
+
+        /* ==========================================================================
+           EVENT LISTENERS & BINDINGS
+           ========================================================================== */
+        function setupEventListeners() {
+            // Command Input Form
+            elements.commandForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const val = elements.userInput.value;
+                if (val) {
+                    logTerminal('VOCÊ', val, 'text-cyan-200');
+                    handleUserCommand(val);
+                    elements.userInput.value = '';
+                }
+            });
+
+            // Arc Reactor Mic Click
+            elements.arcReactorContainer.addEventListener('click', () => {
+                playSFX('click');
+                toggleListening();
+            });
+
+            elements.btnToggleMic.addEventListener('click', () => {
+                playSFX('click');
+                toggleListening();
+            });
+
+            // Keyboard Shortcut: Spacebar triggers voice
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && document.activeElement !== elements.userInput) {
+                    e.preventDefault();
+                    toggleListening();
+                }
+            });
+
+            // Quick Command Buttons
+            document.querySelectorAll('.quick-cmd').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const cmd = btn.getAttribute('data-cmd');
+                    elements.userInput.value = cmd;
+                    playSFX('click');
+                    handleUserCommand(cmd);
+                });
+            });
+
+            // Sound Toggle
+            elements.btnSoundToggle.addEventListener('click', () => {
+                state.sfxEnabled = !state.sfxEnabled;
+                elements.soundIcon.className = state.sfxEnabled ? 'fa-solid fa-volume-high text-cyan-400' : 'fa-solid fa-volume-xmark text-slate-500';
+                logTerminal('SYSTEM', `Efeitos sonoros ${state.sfxEnabled ? 'Ativados' : 'Desativados'}.`, 'text-mono');
+            });
+
+            // API Key Modal Controls
+            elements.btnApiModal.addEventListener('click', () => {
+                elements.geminiApiKeyInput.value = state.apiKey;
+                elements.apiModal.classList.remove('hidden');
+                playSFX('click');
+            });
+
+            elements.btnCloseModal.addEventListener('click', () => {
+                elements.apiModal.classList.add('hidden');
+            });
+
+            elements.btnSaveKey.addEventListener('click', () => {
+                const key = elements.geminiApiKeyInput.value.trim();
+                state.apiKey = key;
+                localStorage.setItem('jarvis_gemini_key', key);
+                elements.engineStatusTag.innerText = key ? 'GEMINI 3 FLASH' : 'SMART FALLBACK';
+                elements.engineStatusTag.className = key ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold';
+                elements.apiModal.classList.add('hidden');
+                playSFX('startup');
+                logTerminal('SYSTEM', key ? 'Chave Gemini configurada. Motor de IA Gemini 3 ativado.' : 'Chave removida. Usando motor offline.', 'text-emerald-400');
+            });
+
+            // Weather Refresh
+            elements.btnRefreshWeather.addEventListener('click', () => {
+                fetchWeather();
+                playSFX('click');
+            });
+
+            // Diagnostics Button
+            elements.btnDiagQuick.addEventListener('click', () => {
+                handleUserCommand('Executar diagnóstico');
+            });
+
+            // Clear Logs
+            elements.btnClearLogs.addEventListener('click', () => {
+                elements.terminalLog.innerHTML = '';
+                playSFX('click');
+            });
+        }
+
+        /* ==========================================================================
+           SYSTEM INITIALIZATION
+           ========================================================================== */
+        window.addEventListener('load', () => {
+            setupEventListeners();
+            setInterval(updateClock, 1000);
+            setInterval(runDiagnostics, 4000);
+            updateClock();
+            fetchWeather();
+            initSpeechRecognition();
+
+            // Set initial engine status indicator
+            if (state.apiKey) {
+                elements.engineStatusTag.innerText = 'GEMINI 3 FLASH';
+                elements.engineStatusTag.className = 'text-emerald-400 font-bold';
+            }
+
+            // Welcome Startup Audio
+            setTimeout(() => {
+                playSFX('startup');
+                speak('Sistemas inicializados. À sua disposição, Senhor.');
+            }, 800);
+        });
     </script>
 </body>
 </html>
